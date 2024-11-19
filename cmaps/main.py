@@ -1,13 +1,12 @@
 import os
 import re
 import glob
-import itertools
 import numpy as np
 import numpy.typing as npt
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.colors import Colormap, to_rgba_array
-from typing import Any, List, Optional
+from typing import Any, List, Iterable, Optional
 
 
 def find_files_with_extension(directory: str, extension: str):
@@ -30,7 +29,7 @@ class ListedColormap(Colormap):
 
     Parameters
     ----------
-    colors : list, array
+    colors : str, list, array
         Sequence of Matplotlib color specifications (color names or RGB(A) values).
     name : str, optional
         String to identify the colormap.
@@ -49,28 +48,19 @@ class ListedColormap(Colormap):
         the list will be extended by repetition.
     """
 
-    def __init__(self, colors: npt.ArrayLike, name: str = 'from_list', N: Optional[int] = None):
-        self.monochrome = False
-        if N is None:
-            self.colors = colors
+    def __init__(self, colors: Iterable, name: str = 'from_list', N: Optional[int] = None):
+        self.colors: npt.NDArray[Any]
+        self.monochrome: bool = False
+        if isinstance(colors, (list, tuple, np.ndarray)):
+            self.colors = np.asarray(colors)
             N = len(colors)
+        elif isinstance(colors, str):
+            if N is None:
+                raise ValueError('N must be specified when colors is a string')
+            self.colors = np.array([colors] * N)
+            self.monochrome = True
         else:
-            if isinstance(colors, str):
-                self.colors = [colors] * N
-                self.monochrome = True
-            elif np.iterable(colors):
-                if np.isscalar(colors):
-                    self.monochrome = True
-                self.colors = list(itertools.islice(itertools.cycle(colors), N))
-            else:
-                try:
-                    gray = float(colors)
-                except TypeError:
-                    pass
-                else:
-                    self.colors = [gray] * N
-                self.monochrome = True
-        self.colors = np.asarray(self.colors)
+            raise TypeError('Incorrect input type for colors')
         super().__init__(name=name, N=N)
 
     def _init(self):
@@ -129,11 +119,11 @@ class ListedColormap(Colormap):
     def __str__(self) -> str:
         return str(self.colors)
 
-    def to_list(self) -> List:
+    def to_list(self) -> List[float]:
         return self.colors.tolist()
 
-    def to_numpy(self) -> np.ndarray:
-        return np.asarray(self.colors)
+    def to_numpy(self) -> npt.NDArray:
+        return self.colors
 
     def plot_cmap(self):
         a = np.outer(np.ones(10), np.arange(0, 1, 0.001))
@@ -184,7 +174,7 @@ class UniversalColormap:
             cmap_name_list.add(cname)
         self.cmap_name_list = sorted(list(cmap_name_list))
 
-    def _color_table(self, cmap_file: str) -> np.ndarray:
+    def _color_table(self, cmap_file: str) -> npt.NDArray[Any]:
         pattern = re.compile(r'(\d\.?\d*)\s+(\d\.?\d*)\s+(\d\.?\d*).*')
         with open(cmap_file) as cmap:
             cmap_buff = cmap.read()
