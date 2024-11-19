@@ -6,8 +6,10 @@ setuptools.setup(
     name='cmaps',
     description='An extension of matplotlib colormaps',
     version=__version__,
-    author='jshn9515',
-    author_email='jshn9515@163.com',
+    author='Hao Huang',
+    author_email='hhuangwx@gmail.com',
+    maintainer='jshn9515',
+    maintainer_email='jshn9510@gmail.com',
     packages=setuptools.find_packages(),
     include_package_data=True,
     package_data={
