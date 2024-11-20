@@ -52,7 +52,12 @@ class ListedColormap(Colormap):
         self.monochrome: bool = False
         if isinstance(colors, (list, tuple, np.ndarray)):
             self.colors = np.asarray(colors)
-            N = len(colors)
+            if N:
+                if N < len(colors):
+                    self.colors = self.colors[:N]
+                elif N > len(colors):
+                    self.colors = np.repeat(self.colors, N // len(colors) + 1, axis=0)[:N]
+            N = len(self.colors)
         elif isinstance(colors, str):
             if N is None:
                 raise ValueError('N must be specified when colors is a string')
@@ -134,6 +139,9 @@ class ListedColormap(Colormap):
 
     def __add__(self, other: 'ListedColormap') -> 'ListedColormap':
         return ListedColormap(np.vstack([self.colors, other.colors]), name=self.name + '_' + other.name)
+    
+    def __mul__(self, num: int) -> 'ListedColormap':
+        return ListedColormap(np.repeat(self.colors, num, axis=0), name=self.name + f'_rep({str(num)})')
 
     def __getitem__(self, item: Any) -> 'ListedColormap':
         return ListedColormap(self.colors[item], name=self.name + '_slice')
