@@ -140,6 +140,9 @@ class ListedColormap(Colormap):
 
     def __str__(self) -> str:
         return str(self.colors)
+    
+    def __len__(self) -> int:
+        return self.N
 
     def to_list(self) -> List[Any]:
         return self.colors.tolist()
