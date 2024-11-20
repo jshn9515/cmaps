@@ -20,5 +20,5 @@ def get_cmap_list():
     return repo.get_cmap_list()
 
 
-def plot_cmap(cname: str):
-    repo.plot_cmap(cname)
+def plot_cmap(cname: str, *, lutsize: Optional[int] = None, reverse: bool = False):
+    repo.plot_cmap(cname, lutsize=lutsize, reverse=reverse)
