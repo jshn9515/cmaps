@@ -16,7 +16,9 @@ def find_files_with_extension(directory: str, extension: str):
     return found_files
 
 
-CMAPS_FILE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'colormaps')
+CMAPS_FILE_DIR = os.environ.get(
+    'CMAPS_FILE_DIR', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'colormaps')
+)
 
 
 class ListedColormap(colors.Colormap):
