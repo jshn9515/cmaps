@@ -5,7 +5,7 @@ import numpy as np
 import numpy.typing as npt
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from matplotlib.colors import Colormap, to_rgba_array
+import matplotlib.colors as colors
 from typing import Any, List, Iterable, Optional
 
 
@@ -19,7 +19,7 @@ def find_files_with_extension(directory: str, extension: str):
 CMAPS_FILE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'colormaps')
 
 
-class ListedColormap(Colormap):
+class ListedColormap(colors.Colormap):
     def __init__(self, colors: Iterable, name: str = 'from_list', N: Optional[int] = None):
         """
         Colormap object generated from a list of colors.
@@ -69,7 +69,7 @@ class ListedColormap(Colormap):
 
     def _init(self):
         self._lut = np.zeros((self.N + 3, 4), dtype=float)
-        self._lut[:-3] = to_rgba_array(self.colors)
+        self._lut[:-3] = colors.to_rgba_array(self.colors)
         self._isinit = True
         self._set_extremes()
 
@@ -113,7 +113,7 @@ class ListedColormap(Colormap):
         new_cmap = ListedColormap(colors_r, name=name, N=self.N)
         new_cmap.set_extremes(bad=self._rgba_bad, under=self._rgba_under, over=self._rgba_over)
         return new_cmap
-    
+
     def interp(self, lutsize: int) -> 'ListedColormap':
         """
         Interpolate the colormap to a new size.
@@ -139,13 +139,13 @@ class ListedColormap(Colormap):
 
     def __add__(self, other: 'ListedColormap') -> 'ListedColormap':
         return ListedColormap(np.vstack([self.colors, other.colors]), name=self.name + '_' + other.name)
-    
+
     def __iadd__(self, other: 'ListedColormap') -> 'ListedColormap':
         return self + other
-    
+
     def __mul__(self, num: int) -> 'ListedColormap':
         return ListedColormap(np.repeat(self.colors, num, axis=0), name=self.name + f'_rep({str(num)})')
-    
+
     def __imul__(self, num: int) -> 'ListedColormap':
         return self * num
 
@@ -154,13 +154,13 @@ class ListedColormap(Colormap):
 
     def __str__(self) -> str:
         return str(self.colors)
-    
+
     def __len__(self) -> int:
         return self.N
-    
+
     def __iter__(self):
         return iter(self.colors)
-    
+
     def __next__(self):
         return next(self)
 
