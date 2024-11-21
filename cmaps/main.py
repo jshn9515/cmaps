@@ -170,6 +170,13 @@ class ListedColormap(colors.Colormap):
     def to_numpy(self) -> npt.NDArray[Any]:
         return self.colors
 
+    def to_segment(self, N: Optional[int] = None) -> colors.LinearSegmentedColormap:
+        if N is None:
+            N = self.N
+        return colors.LinearSegmentedColormap.from_list(
+            'seg_' + self.name, self.colors.tolist(), N=N
+        )
+
     def plot_cmap(self):
         a = np.outer(np.ones(10), np.arange(0, 1, 0.001))
         fig = plt.figure(1)
