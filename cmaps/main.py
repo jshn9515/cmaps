@@ -140,8 +140,14 @@ class ListedColormap(Colormap):
     def __add__(self, other: 'ListedColormap') -> 'ListedColormap':
         return ListedColormap(np.vstack([self.colors, other.colors]), name=self.name + '_' + other.name)
     
+    def __iadd__(self, other: 'ListedColormap') -> 'ListedColormap':
+        return self + other
+    
     def __mul__(self, num: int) -> 'ListedColormap':
         return ListedColormap(np.repeat(self.colors, num, axis=0), name=self.name + f'_rep({str(num)})')
+    
+    def __imul__(self, num: int) -> 'ListedColormap':
+        return self * num
 
     def __getitem__(self, item: Any) -> 'ListedColormap':
         return ListedColormap(self.colors[item], name=self.name + '_slice')
@@ -151,6 +157,12 @@ class ListedColormap(Colormap):
     
     def __len__(self) -> int:
         return self.N
+    
+    def __iter__(self):
+        return iter(self.colors)
+    
+    def __next__(self):
+        return next(self)
 
     def to_list(self) -> List[Any]:
         return self.colors.tolist()
@@ -234,7 +246,7 @@ class UniversalColormap:
         fig = plt.figure(1)
         ax = fig.add_subplot(1, 1, 1)
         ax.imshow(a, aspect='auto', cmap=cmap, origin='lower')
-        ax.text(x=0.5, y=0.5, s=cname, verticalalignment='center', horizontalalignment='center',
+        ax.text(x=0.5, y=0.5, s=cmap.name, verticalalignment='center', horizontalalignment='center',
                 fontsize=14, transform=ax.transAxes)
         ax.axis('off')
         plt.subplots_adjust(top=1, bottom=0, left=0, right=1)
