@@ -1,5 +1,8 @@
 # cmaps
 
+> [!NOTE]
+> This project is forked from [hhuangwx/cmaps](https://github.com/hhuangwx/cmaps)
+
 Make it easier to use user defined colormaps in matplotlib. Default colormaps are from [NCL](http://www.ncl.ucar.edu/Document/Graphics/color_table_gallery.shtml) website.
 
 Users can define an environmental variable `CMAPS_FILE_DIR` pointing to the folder containing the self-defined RGB colormaps.
