@@ -1,7 +1,6 @@
 import setuptools
 from cmaps import __version__
 
-
 setuptools.setup(
     name='cmaps',
     description='An extension of matplotlib colormaps',
@@ -15,10 +14,10 @@ setuptools.setup(
     package_data={
         'cmaps': [
             'colormaps/ncar_ncl/*',
+            'colormaps/matlab/*',
             'colormaps/self_defined/*',
-            'colormaps.png',
         ],
     },
-    license='MIT',
+    license='GPL-v3.0',
     install_requires=['numpy', 'matplotlib>=3.2.0', 'packaging'],
 )
