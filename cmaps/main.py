@@ -1,6 +1,7 @@
 import os
 import re
 import glob
+import pickle
 import numpy as np
 import numpy.typing as npt
 import matplotlib as mpl
@@ -9,11 +10,11 @@ import matplotlib.colors as colors
 from typing import Any, List, Iterable, Optional
 
 
-def find_files_with_extension(directory: str, extension: str):
+def find_files_with_extension(directory: str, extension: str) -> List[str]:
     found_files = []
     for root, _, _ in os.walk(directory):
         found_files.extend(glob.glob(os.path.join(root, extension)))
-    return found_files
+    return sorted(found_files)
 
 
 CMAPS_FILE_DIR = os.environ.get(
@@ -179,7 +180,7 @@ class ListedColormap(colors.Colormap):
             'seg_' + self.name, self.colors.tolist(), N=N
         )
 
-    def plot_cmap(self):
+    def plot_cmap(self, show: bool = True):
         a = np.outer(np.ones(10), np.arange(0, 1, 0.001))
         fig = plt.figure(1)
         ax = fig.add_subplot(1, 1, 1)
@@ -188,20 +189,36 @@ class ListedColormap(colors.Colormap):
                 fontsize=14, transform=ax.transAxes)
         ax.axis('off')
         plt.subplots_adjust(top=1, bottom=0, left=0, right=1)
-        plt.show()
+        if show:
+            plt.show()
 
 
 class UniversalColormap:
     def __init__(self, path: Optional[str] = None):
         """ Constructor for UniversalColormap class. File path to the color maps is required. """
-        cmap_name_list = set()
-        if path is None:
-            USER_CMAP_FILES = find_files_with_extension(CMAPS_FILE_DIR, '*.rgb')
-            cmap_file_list = sorted(USER_CMAP_FILES)
+        cmap_name_list = set([cname for cname in mpl.colormaps if not cname.endswith('_r')])
+
+        if path is None:  # use the default color maps
+            cmap_file_dict = find_files_with_extension(CMAPS_FILE_DIR, '*.pkl')
+            cmap_file_list = find_files_with_extension(CMAPS_FILE_DIR, '*.rgb')
         else:
+            cmap_file_dict = []
             cmap_file_list = sorted(glob.glob(os.path.join(path, '*.rgb')))
+
+        if len(cmap_file_dict) > 0:
+            for cmap_file in cmap_file_dict:
+                with open(cmap_file, 'rb') as fp:
+                    color_data: dict = pickle.load(fp)
+                for cname, colors in color_data.items():
+                    try:
+                        cmap = ListedColormap(colors, name=cname)
+                        mpl.colormaps.register(name=cname, cmap=cmap)
+                        cmap_name_list.add(cname)
+                    except ValueError:
+                        pass
+
         for cmap_file in cmap_file_list:
-            cname = os.path.basename(cmap_file).split('.rgb')[0]
+            cname = os.path.splitext(os.path.basename(cmap_file))[0]
             # start with the number will result illegal attribute
             if cname[0].isdigit() or cname.startswith('_'):
                 cname = 'C' + cname
@@ -211,21 +228,12 @@ class UniversalColormap:
                 cname = 'cmaps_' + cname.replace('+', '_')
 
             try:
-                cmap = mpl.colormaps.get_cmap(cname)
-            except ValueError:
                 cmap = ListedColormap(self._color_table(cmap_file), name=cname)
                 mpl.colormaps.register(name=cname, cmap=cmap)
-            setattr(self, cname, cmap)
-            cmap_name_list.add(cname)
-
-            cname = cname + '_r'
-            try:
-                cmap = mpl.colormaps.get_cmap(cname)
+                cmap_name_list.add(cname)
             except ValueError:
-                cmap = ListedColormap(np.flipud(self._color_table(cmap_file)), name=cname)
-                mpl.colormaps.register(name=cname, cmap=cmap)
-            setattr(self, cname, cmap)
-            cmap_name_list.add(cname)
+                pass
+
         self.cmap_name_list = sorted(list(cmap_name_list))
 
     def _color_table(self, cmap_file: str) -> npt.NDArray[Any]:
@@ -239,7 +247,7 @@ class UniversalColormap:
             return np.asarray(pattern.findall(cmap_buff), dtype='u1') / 255.0
 
     def get_cmap(self, cname: str, *, lutsize: Optional[int] = None, reverse: bool = False) -> ListedColormap:
-        cmap: ListedColormap = getattr(self, cname)
+        cmap: ListedColormap = plt.get_cmap(cname)  # type: ignore
         if lutsize:
             cmap = cmap.interp(lutsize)
         if reverse:
@@ -249,7 +257,7 @@ class UniversalColormap:
     def get_cmap_list(self) -> List[str]:
         return self.cmap_name_list
 
-    def plot_cmap(self, cname: str, *, lutsize: Optional[int] = None, reverse: bool = False):
+    def plot_cmap(self, cname: str, *, lutsize: Optional[int] = None, reverse: bool = False, show: bool = True):
         cmap = self.get_cmap(cname, lutsize=lutsize, reverse=reverse)
         a = np.outer(np.ones(10), np.arange(0, 1, 0.001))
         fig = plt.figure(1)
@@ -259,4 +267,5 @@ class UniversalColormap:
                 fontsize=14, transform=ax.transAxes)
         ax.axis('off')
         plt.subplots_adjust(top=1, bottom=0, left=0, right=1)
-        plt.show()
+        if show:
+            plt.show()
