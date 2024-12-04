@@ -13,6 +13,8 @@ repo = UniversalColormap()
 
 
 def get_cmap(cname: str, *, lutsize: Optional[int] = None, reverse: bool = False):
+    if cname.endswith('_r'):
+        return repo.get_cmap(cname[:-2], lutsize=lutsize, reverse=True)
     return repo.get_cmap(cname, lutsize=lutsize, reverse=reverse)
 
 
@@ -20,5 +22,8 @@ def get_cmap_list():
     return repo.get_cmap_list()
 
 
-def plot_cmap(cname: str, *, lutsize: Optional[int] = None, reverse: bool = False):
-    repo.plot_cmap(cname, lutsize=lutsize, reverse=reverse)
+def plot_cmap(cname: str, *, lutsize: Optional[int] = None, reverse: bool = False, show: bool = True):
+    if cname.endswith('_r'):
+        repo.plot_cmap(cname[:-2], lutsize=lutsize, reverse=True, show=show)
+    else:
+        repo.plot_cmap(cname, lutsize=lutsize, reverse=reverse, show=show)
