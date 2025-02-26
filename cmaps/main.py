@@ -1,16 +1,17 @@
-import os
-import re
 import glob
+import os
 import pickle
+import re
+from typing import Any, Iterable
+
+import matplotlib as mpl
+import matplotlib.colors as colors
+import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-import matplotlib.colors as colors
-from typing import Any, List, Iterable, Optional
 
 
-def find_files_with_extension(directory: str, extension: str) -> List[str]:
+def find_files_with_extension(directory: str, extension: str) -> list[str]:
     found_files = []
     for root, _, _ in os.walk(directory):
         found_files.extend(glob.glob(os.path.join(root, extension)))
@@ -18,12 +19,13 @@ def find_files_with_extension(directory: str, extension: str) -> List[str]:
 
 
 CMAPS_FILE_DIR = os.getenv(
-    'CMAPS_FILE_DIR', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'colormaps')
+    'CMAPS_FILE_DIR',
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), 'colormaps'),
 )
 
 
 class ListedColormap(colors.Colormap):
-    def __init__(self, colors: Iterable, name: str = 'from_list', N: Optional[int] = None):
+    def __init__(self, colors: Iterable, name: str = 'from_list', N: int | None = None):
         """
         Colormap object generated from a list of colors.
 
@@ -74,7 +76,7 @@ class ListedColormap(colors.Colormap):
         self._lut = np.zeros((self.N + 3, 4), dtype=float)
         self._lut[:-3] = colors.to_rgba_array(self.colors)
         self._isinit = True
-        self._set_extremes()
+        self._set_extremes()  # type: ignore
 
     def resampled(self, lutsize: int) -> 'ListedColormap':
         """
@@ -92,10 +94,10 @@ class ListedColormap(colors.Colormap):
         """
         colors = self(np.linspace(0, 1, lutsize))
         new_cmap = ListedColormap(colors, name=self.name)
-        new_cmap.set_extremes(bad=self._rgba_bad, under=self._rgba_under, over=self._rgba_over)
+        new_cmap.set_extremes(bad=self._rgba_bad, under=self._rgba_under, over=self._rgba_over)  # type: ignore
         return new_cmap
 
-    def reversed(self, name: Optional[str] = None) -> 'ListedColormap':
+    def reversed(self, name: str | None = None) -> 'ListedColormap':
         """
         Return a reversed instance of the Colormap.
 
@@ -114,13 +116,15 @@ class ListedColormap(colors.Colormap):
             name = self.name + '_r'
         colors_r = np.flipud(self.colors)
         new_cmap = ListedColormap(colors_r, name=name, N=self.N)
-        new_cmap.set_extremes(bad=self._rgba_bad, under=self._rgba_under, over=self._rgba_over)
+        new_cmap.set_extremes(
+            bad=self._rgba_bad, under=self._rgba_under, over=self._rgba_over  # type: ignore
+        )
         return new_cmap
 
     def interp(self, lutsize: int) -> 'ListedColormap':
         """
         Interpolate the colormap to a new size.
-        
+
         Different from resampled of the new version of matplotlib (we interpolate colors here)
 
         Parameters
@@ -135,19 +139,26 @@ class ListedColormap(colors.Colormap):
         """
         x = np.linspace(0, 1, lutsize)
         xp = np.linspace(0, 1, self.N)
-        new_cmap = np.hstack([
-            np.interp(x, xp, self.colors[:, i]).reshape(-1, 1) for i in range(self.colors.shape[1])
-        ])
+        new_cmap = np.hstack(
+            [
+                np.interp(x, xp, self.colors[:, i]).reshape(-1, 1)
+                for i in range(self.colors.shape[1])
+            ]
+        )
         return ListedColormap(new_cmap, name='interp_' + self.name)
 
     def __add__(self, other: 'ListedColormap') -> 'ListedColormap':
-        return ListedColormap(np.vstack([self.colors, other.colors]), name=self.name + '_' + other.name)
+        return ListedColormap(
+            np.vstack([self.colors, other.colors]), name=self.name + '_' + other.name
+        )
 
     def __iadd__(self, other: 'ListedColormap') -> 'ListedColormap':
         return self + other
 
     def __mul__(self, num: int) -> 'ListedColormap':
-        return ListedColormap(np.repeat(self.colors, num, axis=0), name=self.name + f'_rep({str(num)})')
+        return ListedColormap(
+            np.repeat(self.colors, num, axis=0), name=self.name + f'_rep({str(num)})'
+        )
 
     def __imul__(self, num: int) -> 'ListedColormap':
         return self * num
@@ -167,13 +178,13 @@ class ListedColormap(colors.Colormap):
     def __next__(self):
         return next(self)
 
-    def to_list(self) -> List[Any]:
+    def to_list(self) -> list[Any]:
         return self.colors.tolist()
 
     def to_numpy(self) -> npt.NDArray[Any]:
         return self.colors
 
-    def to_segment(self, N: Optional[int] = None) -> colors.LinearSegmentedColormap:
+    def to_segment(self, N: int | None = None) -> colors.LinearSegmentedColormap:
         if N is None:
             N = self.N
         return colors.LinearSegmentedColormap.from_list(
@@ -185,8 +196,15 @@ class ListedColormap(colors.Colormap):
         fig = plt.figure(1)
         ax = fig.add_subplot(1, 1, 1)
         ax.imshow(a, aspect='auto', cmap=self, origin='lower')
-        ax.text(x=0.5, y=0.5, s=self.name, verticalalignment='center', horizontalalignment='center',
-                fontsize=14, transform=ax.transAxes)
+        ax.text(
+            x=0.5,
+            y=0.5,
+            s=self.name,
+            verticalalignment='center',
+            horizontalalignment='center',
+            fontsize=14,
+            transform=ax.transAxes,
+        )
         ax.axis('off')
         plt.subplots_adjust(top=1, bottom=0, left=0, right=1)
         if show:
@@ -194,9 +212,11 @@ class ListedColormap(colors.Colormap):
 
 
 class UniversalColormap:
-    def __init__(self, path: Optional[str] = None):
-        """ Constructor for UniversalColormap class. File path to the color maps is required. """
-        cmap_name_list = set([cname for cname in mpl.colormaps if not cname.endswith('_r')])
+    def __init__(self, path: str | None = None):
+        """Constructor for UniversalColormap class. File path to the color maps is required."""
+        cmap_name_list = set(
+            [cname for cname in mpl.colormaps if not cname.endswith('_r')]
+        )
 
         if path is None:  # use the default color maps
             cmap_file_dict = find_files_with_extension(CMAPS_FILE_DIR, '*.pkl')
@@ -246,7 +266,9 @@ class UniversalColormap:
         else:
             return np.asarray(pattern.findall(cmap_buff), dtype='u1') / 255.0
 
-    def get_cmap(self, cname: str, *, lutsize: Optional[int] = None, reverse: bool = False) -> ListedColormap:
+    def get_cmap(
+        self, cname: str, *, lutsize: int | None = None, reverse: bool = False
+    ) -> ListedColormap:
         cmap: ListedColormap = plt.get_cmap(cname)  # type: ignore
         if lutsize:
             cmap = cmap.interp(lutsize)
@@ -254,17 +276,31 @@ class UniversalColormap:
             cmap = cmap.reversed()
         return cmap
 
-    def get_cmap_list(self) -> List[str]:
+    def get_cmap_list(self) -> list[str]:
         return self.cmap_name_list
 
-    def plot_cmap(self, cname: str, *, lutsize: Optional[int] = None, reverse: bool = False, show: bool = True):
+    def plot_cmap(
+        self,
+        cname: str,
+        *,
+        lutsize: int | None = None,
+        reverse: bool = False,
+        show: bool = True,
+    ):
         cmap = self.get_cmap(cname, lutsize=lutsize, reverse=reverse)
         a = np.outer(np.ones(10), np.arange(0, 1, 0.001))
         fig = plt.figure(1)
         ax = fig.add_subplot(1, 1, 1)
         ax.imshow(a, aspect='auto', cmap=cmap, origin='lower')
-        ax.text(x=0.5, y=0.5, s=cmap.name, verticalalignment='center', horizontalalignment='center',
-                fontsize=14, transform=ax.transAxes)
+        ax.text(
+            x=0.5,
+            y=0.5,
+            s=cmap.name,
+            verticalalignment='center',
+            horizontalalignment='center',
+            fontsize=14,
+            transform=ax.transAxes,
+        )
         ax.axis('off')
         plt.subplots_adjust(top=1, bottom=0, left=0, right=1)
         if show:
